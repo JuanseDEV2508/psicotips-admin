@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { getApiUrl } from "@/lib/api/config";
 import { accessCookieName } from "@/lib/auth/session";
-import type { ChannelsResponse, ClientStats, Contact, ContactDetailResponse } from "@/features/clients/types/crm";
+import type { ChannelsResponse, ClientStats, Contact, ContactDetailResponse, ConversationDetailResponse, PaginatedConversations } from "@/features/clients/types/crm";
 
 async function get<T>(path: string): Promise<T> {
   const apiUrl = getApiUrl(); const token = (await cookies()).get(accessCookieName)?.value;
@@ -13,4 +13,4 @@ async function get<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export const crmServer = { getContacts: () => get<Contact[]>("/api/crm/contacts/"), getClientStats: () => get<ClientStats>("/api/crm/clients/stats/"), getContactDetail: (id: number) => get<ContactDetailResponse>(`/api/crm/contacts/${id}/detail/`), getChannels: () => get<ChannelsResponse>("/api/crm/channels/") };
+export const crmServer = { getContacts: () => get<Contact[]>("/api/crm/contacts/"), getClientStats: () => get<ClientStats>("/api/crm/clients/stats/"), getContactDetail: (id: number) => get<ContactDetailResponse>(`/api/crm/contacts/${id}/detail/`), getConversations: () => get<PaginatedConversations>("/api/crm/conversations/"), getConversationById: (id: number) => get<ConversationDetailResponse>(`/api/crm/conversations/${id}/`), getChannels: () => get<ChannelsResponse>("/api/crm/channels/") };

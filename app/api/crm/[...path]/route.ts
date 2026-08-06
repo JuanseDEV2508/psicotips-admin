@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getApiUrl } from "@/lib/api/config";
 import { accessCookieName } from "@/lib/auth/session";
 
-const allowedPaths = [/^contacts\/$/, /^contacts\/\d+\/(detail\/|conversation\/(live\/)?|conversation\/messages\/|conversation\/control\/)?$/, /^channels\/$/, /^clients\/stats\/$/];
+const allowedPaths = [/^contacts\/$/, /^contacts\/\d+\/(detail\/|lead-information\/|conversation\/(live\/)?|conversation\/messages\/|conversation\/control\/)?$/, /^conversations\/(\d+\/)?$/, /^channels\/$/, /^clients\/stats\/$/];
 
 async function proxy(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   const { path } = await context.params;
@@ -21,3 +21,4 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
 
 export const GET = proxy;
 export const POST = proxy;
+export const PATCH = proxy;
