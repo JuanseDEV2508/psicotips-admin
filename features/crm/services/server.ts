@@ -13,4 +13,4 @@ async function get<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export const crmServer = { getContacts: () => get<Contact[]>("/api/crm/contacts/"), getClientStats: () => get<ClientStats>("/api/crm/clients/stats/"), getContactDetail: (id: number) => get<ContactDetailResponse>(`/api/crm/contacts/${id}/detail/`), getConversations: () => get<PaginatedConversations>("/api/crm/conversations/"), getConversationById: (id: number) => get<ConversationDetailResponse>(`/api/crm/conversations/${id}/`), getChannels: () => get<ChannelsResponse>("/api/crm/channels/") };
+export const crmServer = { getContacts: () => get<Contact[]>("/api/crm/contacts/"), getClientStats: () => get<ClientStats>("/api/crm/clients/stats/"), getContactDetail: (id: number) => get<ContactDetailResponse>(`/api/crm/contacts/${id}/detail/`), getConversations: (query = "") => get<PaginatedConversations>(`/api/crm/conversations/${query ? `?${query}` : ""}`), getConversationById: (id: number) => get<ConversationDetailResponse>(`/api/crm/conversations/${id}/`), getChannels: () => get<ChannelsResponse>("/api/crm/channels/") };
