@@ -1,28 +1,319 @@
 export type ControlMode = "BOT" | "HUMAN" | "HYBRID" | "PAUSED";
 export type SenderRole = "CUSTOMER" | "BOT" | "AGENT" | "SYSTEM";
-export type MessageStatus = "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
-export interface Contact { id: number; name: string; first_name: string; last_name: string; job_title?: string | null; email: string | null; phone: string | null; whatsapp_id?: string | null; created_at: string; updated_at?: string | null }
-export interface Company { id: number; name: string; email: string | null; phone: string | null; nit: string | null; city: string | null; number_of_participants: number | null; description: string | null; address: string | null; how_they_found_us: string | null; is_active: boolean; proposal_date: string | null; created_at: string }
-export interface LeadInformation { id: number | null; conversation_id: number | null; company: number | null; company_name: string | null; contact: number; skills_to_work: string | null; participants_count: string | null; training_duration: string | null; event_date: string | null; location_type: string | null; logistics_details: string | null; approximate_budget: string | null; proposal_deadline: string | null; training_expectations: string | null; chatbot_rating: number | null; chatbot_feedback: string | null; completion_percentage: string | null; current_step: string | null; is_completed: boolean | null; created_at: string | null; updated_at: string | null }
-export type LeadInformationField = "skills_to_work" | "participants_count" | "training_duration" | "event_date" | "location_type" | "logistics_details" | "approximate_budget" | "proposal_deadline" | "training_expectations" | "chatbot_rating" | "chatbot_feedback" | "completion_percentage" | "current_step" | "is_completed";
-export type LeadInformationPayload = Partial<Omit<Pick<LeadInformation, LeadInformationField>, "chatbot_rating" | "completion_percentage">> & { chatbot_rating?: number | null; completion_percentage?: number | null; conversation_id?: number };
-export interface LeadInformationResponse { contact_id: number; conversation_id: number; lead_information: LeadInformation; editable_fields: LeadInformationField[]; commercial_fields: LeadInformationField[]; updated_fields?: LeadInformationField[] }
-export interface ConversationSummary { id: number; status: string; phone_number: string | null; whatsapp_thread_id: string | null; control_mode: ControlMode; messages_count: number; last_message_at: string | null; has_lead_information: boolean; commercial_case_id: number | null; created_at: string; updated_at: string }
-export interface ConversationPreview { text: string; truncated: boolean; direction: string; sender_type: string; sender_role: SenderRole; is_internal: boolean; created_at: string }
-export interface ConversationListItem extends ConversationSummary { contact: Contact; company: Pick<Company, "id" | "name" | "nit" | "city"> & { sector?: string | null } | null; last_message: ConversationPreview | null }
-export interface PaginatedConversations { count: number; next: string | null; previous: string | null; results: ConversationListItem[] }
-export interface ConversationControl { mode: ControlMode; fallback_mode?: ControlMode; assigned_agent?: { id: number; email: string; username: string; role: string } | null; taken_over_at?: string | null; released_at?: string | null; updated_at?: string; bot_can_reply: boolean; automations_enabled: boolean }
-export interface ConversationMessage { id: string; direction: string; sender_type: string; sender_role: SenderRole; message_type: string; status: MessageStatus; text: string; media_url: string; metadata: Record<string, unknown>; external_message_id: string; reply_to: string | null; is_internal: boolean; sent_by: { id: number; email: string; username: string; role: string } | null; sent_at: string | null; created_at: string }
-export interface AvailableConversation { id: number; status: string; messages_count: number; created_at: string }
-export interface ContactDetailResponse { contact: Contact; company: Company | null; lead_information: LeadInformation | null; conversations: ConversationSummary[]; conversations_count: number }
-export interface ContactConversationResponse { contact: Contact; company: Company | null; conversation: ConversationSummary; control: ConversationControl; lead_information: LeadInformation | null; ai_summary: string; messages_count: number; messages: ConversationMessage[]; available_conversations: AvailableConversation[] }
-export interface ConversationDetailResponse { contact: Contact; company: Company | null; conversation: ConversationSummary; control: ConversationControl; commercial_case_id: number | null; lead_information: LeadInformation | null; ai_summary: string; messages_count: number; messages: ConversationMessage[] }
-export interface LiveConversationResponse { conversation_id: number; status: string; control: ConversationControl; messages_total: number; last_message_at: string | null; new_messages_count: number; messages: ConversationMessage[]; cursor: string | null; has_more: boolean; server_time: string; poll_interval_ms?: number }
-export interface SendMessagePayload { text: string; internal: boolean; take_control?: boolean; conversation_id?: number; reply_to?: string | null }
-export interface SendMessageResponse { persisted: boolean; delivery_status: MessageStatus; error: string; internal: boolean; control: ConversationControl; message: ConversationMessage }
-export interface ConversationControlPayload { mode: ControlMode; force?: boolean; conversation_id?: number }
-export interface ConversationControlResponse { conversation_id: number; commercial_case_id: number | null; control: ConversationControl; bot_can_reply: boolean }
-export interface ClientStats { total_clients: number; active_clients: number; open_conversations: number; proposals_sent: number }
-export interface WhatsappChannel { id: number; name: string; provider: "META_CLOUD" | "TWILIO" | "OTHER"; phone_number_id: string; display_phone_number: string; business_account_id: string; api_version: string; is_active: boolean; is_default: boolean; has_access_token: boolean; created_at: string; updated_at: string }
-export interface ChannelsResponse { channels: WhatsappChannel[]; default_channel_id: number | null; total: number }
-export interface ApiError { status: number; message: string; body: unknown }
+export type MessageStatus =
+  "PENDING" | "SENT" | "DELIVERED" | "READ" | "FAILED";
+export interface Contact {
+  id: number;
+  name: string;
+  first_name: string;
+  last_name: string;
+  job_title?: string | null;
+  email: string | null;
+  phone: string | null;
+  whatsapp_id?: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+export interface Company {
+  id: number;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  nit: string | null;
+  city: string | null;
+  number_of_participants: number | null;
+  description: string | null;
+  address: string | null;
+  website?: string | null;
+  sector?: string | null;
+  how_they_found_us: string | null;
+  is_active: boolean;
+  proposal_date: string | null;
+  created_at: string;
+}
+export type WelcomeMessageStatus =
+  | "SENT"
+  | "ALREADY_SENT"
+  | "IN_PROGRESS"
+  | "NOT_REQUESTED"
+  | "SKIPPED"
+  | "FAILED";
+export interface WelcomeMessage {
+  status: WelcomeMessageStatus;
+  sent: boolean;
+  can_retry: boolean;
+  template: string;
+  message_id: string;
+  reason: string;
+  error: string;
+  sent_at: string | null;
+  attempts: number;
+  contact_id?: number;
+}
+export interface ClientCreateResponse {
+  contact: Contact;
+  company: Company | null;
+  company_created: boolean;
+  has_lead_information: boolean;
+  lead_information: LeadInformation | null;
+  conversation_id: number | null;
+  welcome_message: WelcomeMessage;
+}
+export interface ClientCreatePayload {
+  company_id?: number;
+  contact: {
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    job_title?: string;
+    email?: string;
+    phone?: string;
+    whatsapp_id?: string;
+  };
+  lead_information?: Partial<
+    Pick<
+      LeadInformation,
+      | "company_name"
+      | "skills_to_work"
+      | "participants_count"
+      | "training_duration"
+      | "event_date"
+      | "location_type"
+      | "logistics_details"
+      | "approximate_budget"
+      | "proposal_deadline"
+      | "training_expectations"
+      | "current_step"
+    >
+  >;
+  send_welcome_message?: boolean;
+}
+export interface LeadInformation {
+  id: number | null;
+  conversation_id: number | null;
+  company: number | null;
+  company_name: string | null;
+  contact: number;
+  skills_to_work: string | null;
+  participants_count: string | null;
+  training_duration: string | null;
+  event_date: string | null;
+  location_type: string | null;
+  logistics_details: string | null;
+  approximate_budget: string | null;
+  proposal_deadline: string | null;
+  training_expectations: string | null;
+  chatbot_rating: number | null;
+  chatbot_feedback: string | null;
+  completion_percentage: string | null;
+  current_step: string | null;
+  is_completed: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+export type LeadInformationField =
+  | "skills_to_work"
+  | "participants_count"
+  | "training_duration"
+  | "event_date"
+  | "location_type"
+  | "logistics_details"
+  | "approximate_budget"
+  | "proposal_deadline"
+  | "training_expectations"
+  | "chatbot_rating"
+  | "chatbot_feedback"
+  | "completion_percentage"
+  | "current_step"
+  | "is_completed";
+export type LeadInformationPayload = Partial<
+  Omit<
+    Pick<LeadInformation, LeadInformationField>,
+    "chatbot_rating" | "completion_percentage"
+  >
+> & {
+  chatbot_rating?: number | null;
+  completion_percentage?: number | null;
+  conversation_id?: number;
+};
+export interface LeadInformationResponse {
+  contact_id: number;
+  conversation_id: number;
+  lead_information: LeadInformation;
+  editable_fields: LeadInformationField[];
+  commercial_fields: LeadInformationField[];
+  updated_fields?: LeadInformationField[];
+}
+export interface ConversationSummary {
+  id: number;
+  status: string;
+  phone_number: string | null;
+  whatsapp_thread_id: string | null;
+  control_mode: ControlMode;
+  messages_count: number;
+  last_message_at: string | null;
+  has_lead_information: boolean;
+  commercial_case_id: number | null;
+  created_at: string;
+  updated_at: string;
+}
+export interface ConversationPreview {
+  text: string;
+  truncated: boolean;
+  direction: string;
+  sender_type: string;
+  sender_role: SenderRole;
+  is_internal: boolean;
+  created_at: string;
+}
+export interface ConversationListItem extends ConversationSummary {
+  contact: Contact;
+  company:
+    | (Pick<Company, "id" | "name" | "nit" | "city"> & {
+        sector?: string | null;
+      })
+    | null;
+  last_message: ConversationPreview | null;
+}
+export interface PaginatedConversations {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ConversationListItem[];
+}
+export interface ConversationControl {
+  mode: ControlMode;
+  fallback_mode?: ControlMode;
+  assigned_agent?: {
+    id: number;
+    email: string;
+    username: string;
+    role: string;
+  } | null;
+  taken_over_at?: string | null;
+  released_at?: string | null;
+  updated_at?: string;
+  bot_can_reply: boolean;
+  automations_enabled: boolean;
+}
+export interface ConversationMessage {
+  id: string;
+  direction: string;
+  sender_type: string;
+  sender_role: SenderRole;
+  message_type: string;
+  status: MessageStatus;
+  text: string;
+  media_url: string;
+  metadata: Record<string, unknown>;
+  external_message_id: string;
+  reply_to: string | null;
+  is_internal: boolean;
+  sent_by: { id: number; email: string; username: string; role: string } | null;
+  sent_at: string | null;
+  created_at: string;
+}
+export interface AvailableConversation {
+  id: number;
+  status: string;
+  messages_count: number;
+  created_at: string;
+}
+export interface ContactDetailResponse {
+  contact: Contact;
+  company: Company | null;
+  lead_information: LeadInformation | null;
+  conversations: ConversationSummary[];
+  conversations_count: number;
+}
+export interface ContactConversationResponse {
+  contact: Contact;
+  company: Company | null;
+  conversation: ConversationSummary;
+  control: ConversationControl;
+  lead_information: LeadInformation | null;
+  ai_summary: string;
+  messages_count: number;
+  messages: ConversationMessage[];
+  available_conversations: AvailableConversation[];
+}
+export interface ConversationDetailResponse {
+  contact: Contact;
+  company: Company | null;
+  conversation: ConversationSummary;
+  control: ConversationControl;
+  commercial_case_id: number | null;
+  lead_information: LeadInformation | null;
+  ai_summary: string;
+  messages_count: number;
+  messages: ConversationMessage[];
+}
+export interface LiveConversationResponse {
+  conversation_id: number;
+  status: string;
+  control: ConversationControl;
+  messages_total: number;
+  last_message_at: string | null;
+  new_messages_count: number;
+  messages: ConversationMessage[];
+  cursor: string | null;
+  has_more: boolean;
+  server_time: string;
+  poll_interval_ms?: number;
+}
+export interface SendMessagePayload {
+  text: string;
+  internal: boolean;
+  take_control?: boolean;
+  conversation_id?: number;
+  reply_to?: string | null;
+}
+export interface SendMessageResponse {
+  persisted: boolean;
+  delivery_status: MessageStatus;
+  error: string;
+  internal: boolean;
+  control: ConversationControl;
+  message: ConversationMessage;
+}
+export interface ConversationControlPayload {
+  mode: ControlMode;
+  force?: boolean;
+  conversation_id?: number;
+}
+export interface ConversationControlResponse {
+  conversation_id: number;
+  commercial_case_id: number | null;
+  control: ConversationControl;
+  bot_can_reply: boolean;
+}
+export interface ClientStats {
+  total_clients: number;
+  active_clients: number;
+  open_conversations: number;
+  proposals_sent: number;
+}
+export interface WhatsappChannel {
+  id: number;
+  name: string;
+  provider: "META_CLOUD" | "TWILIO" | "OTHER";
+  phone_number_id: string;
+  display_phone_number: string;
+  business_account_id: string;
+  api_version: string;
+  is_active: boolean;
+  is_default: boolean;
+  has_access_token: boolean;
+  created_at: string;
+  updated_at: string;
+}
+export interface ChannelsResponse {
+  channels: WhatsappChannel[];
+  default_channel_id: number | null;
+  total: number;
+}
+export interface ApiError {
+  status: number;
+  message: string;
+  body: unknown;
+}

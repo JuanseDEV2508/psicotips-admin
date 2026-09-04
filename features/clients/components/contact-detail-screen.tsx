@@ -28,6 +28,7 @@ import type {
   LeadInformationField,
   LeadInformationPayload,
   LeadInformationResponse,
+  WelcomeMessage,
 } from "../types/crm";
 import { display, formatDate } from "../utils";
 
@@ -485,6 +486,104 @@ function LeadFields({
   );
 }
 
+function welcomeDescription(message: WelcomeMessage) {
+  if (message.sent) {
+    return message.sent_at
+      ? `Mensaje enviado el ${formatDate(message.sent_at, true)}.`
+      : "Este cliente ya recibió el mensaje de bienvenida.";
+  }
+  if (message.status === "IN_PROGRESS")
+    return "Hay un envío en curso. Espera unos segundos.";
+  if (message.status === "FAILED")
+    return message.error || "Meta no aceptó el envío. Puedes reintentarlo.";
+  if (message.status === "SKIPPED")
+    return `No se pudo enviar: ${message.reason || "configuración incompleta"}.`;
+  return "Aún no se ha enviado un mensaje de bienvenida.";
+}
+
+function WelcomeMessageCard({ contactId }: { contactId: number }) {
+  const [message, setMessage] = useState<WelcomeMessage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [sendingWelcome, setSendingWelcome] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    crmClient
+      .getWelcomeMessage(contactId)
+      .then((data) => {
+        if (!cancelled) setMessage(data);
+      })
+      .catch((reason) => {
+        if (!cancelled) setError(errorMessage(reason));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contactId]);
+
+  const sendWelcome = async () => {
+    if (!message?.can_retry || sendingWelcome) return;
+    setSendingWelcome(true);
+    setError("");
+    try {
+      setMessage(await crmClient.sendWelcomeMessage(contactId));
+    } catch (reason) {
+      const apiError = reason as ApiError;
+      if (
+        apiError.body &&
+        typeof apiError.body === "object" &&
+        "status" in apiError.body
+      ) {
+        setMessage(apiError.body as WelcomeMessage);
+      } else {
+        setError(errorMessage(reason));
+      }
+    } finally {
+      setSendingWelcome(false);
+    }
+  };
+
+  return (
+    <Card className="border-[#D8D8DC]">
+      <CardHeader>
+        <CardTitle>WhatsApp de bienvenida</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {loading ? (
+          <p className="text-sm text-[#5E5E66]">Consultando estado…</p>
+        ) : error ? (
+          <p role="alert" className="text-sm text-red-700">
+            {error}
+          </p>
+        ) : message ? (
+          <>
+            <p className="text-sm text-[#5E5E66]">
+              {welcomeDescription(message)}
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!message.can_retry || sendingWelcome}
+              onClick={sendWelcome}
+            >
+              <Send />
+              {sendingWelcome
+                ? "Enviando…"
+                : message.sent
+                  ? "Mensaje enviado"
+                  : "Enviar WhatsApp de bienvenida"}
+            </Button>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ContactDetailScreen({
   detail,
 }: {
@@ -502,6 +601,9 @@ export function ContactDetailScreen({
   >(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [leadCompletion, setLeadCompletion] = useState(
+    detail.lead_information?.completion_percentage ?? null,
+  );
   const caseId =
     selected?.commercial_case_id ??
     detail.conversations.find((conversation) => conversation.commercial_case_id)
@@ -520,7 +622,13 @@ export function ContactDetailScreen({
       }),
     [],
   );
-  const leadUpdated = useCallback(() => {}, []);
+  const leadUpdated = useCallback((data: LeadInformationResponse) => {
+    setLeadCompletion(data.lead_information.completion_percentage);
+  }, []);
+  const selectConversation = (conversation: ConversationSummary) => {
+    setSelected(conversation);
+    setLeadCompletion(null);
+  };
   useEffect(() => {
     if (!selected) return;
     let cancelled = false;
@@ -672,6 +780,7 @@ export function ContactDetailScreen({
               ["Actualizado", formatDate(detail.contact.updated_at ?? null)],
             ]}
           />
+          <WelcomeMessageCard contactId={detail.contact.id} />
           <LeadInformationCard
             contactId={detail.contact.id}
             selected={selected}
@@ -687,6 +796,7 @@ export function ContactDetailScreen({
                 contactId={detail.contact.id}
                 contactName={detail.contact.name}
                 conversation={selected}
+                completionPercentage={leadCompletion}
               />
             </CardContent>
           </Card>
@@ -701,7 +811,7 @@ export function ContactDetailScreen({
                 detail.conversations.map((conversation) => (
                   <button
                     key={conversation.id}
-                    onClick={() => setSelected(conversation)}
+                    onClick={() => selectConversation(conversation)}
                     className={`w-full rounded-lg border p-3 text-left text-sm ${selected?.id === conversation.id ? "border-[#8941E8] bg-[#F7F0FF]" : "border-[#D8D8DC]"}`}
                   >
                     <div className="flex justify-between">

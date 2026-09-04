@@ -10,6 +10,7 @@ interface GenerateCommercialRequirementButtonProps {
   contactId: number | string;
   contactName?: string;
   conversation?: { id: number | string; status: string } | null;
+  completionPercentage?: string | number | null;
 }
 
 interface GeneratedRequirement {
@@ -25,16 +26,18 @@ export function GenerateCommercialRequirementButton({
   contactId,
   contactName,
   conversation,
+  completionPercentage,
 }: GenerateCommercialRequirementButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatedRequirement, setGeneratedRequirement] =
     useState<GeneratedRequirement | null>(null);
   const [downloaded, setDownloaded] = useState(false);
-  const isConversationCompleted =
-    conversation?.status?.toUpperCase() === "COMPLETED";
+  const completion =
+    Number.parseFloat(String(completionPercentage ?? "0")) || 0;
+  const meetsCompletionThreshold = completion > 50;
   const isDisabled =
-    isLoading || !contactId || !conversation?.id || !isConversationCompleted;
+    isLoading || !contactId || !conversation?.id || !meetsCompletionThreshold;
 
   const handleGenerateRequirement = async (): Promise<void> => {
     if (isLoading) return;
@@ -46,9 +49,9 @@ export function GenerateCommercialRequirementButton({
       setError("El contacto no tiene una conversación disponible.");
       return;
     }
-    if (!isConversationCompleted) {
+    if (!meetsCompletionThreshold) {
       setError(
-        "La conversación debe estar completada para generar el requerimiento.",
+        "El lead debe tener más de 50 % de completitud para generar el requerimiento.",
       );
       return;
     }
@@ -81,9 +84,9 @@ export function GenerateCommercialRequirementButton({
 
   const statusMessage = !conversation
     ? "Este contacto todavía no tiene una conversación disponible."
-    : !isConversationCompleted
-      ? `Estado actual: ${conversation.status}. El requerimiento comercial estará disponible cuando la conversación haya finalizado.`
-      : "La conversación está completa. Ya puedes generar el requerimiento comercial.";
+    : !meetsCompletionThreshold
+      ? `Completitud actual: ${completion.toFixed(0)} %. Necesita más de 50 % para generar el requerimiento.`
+      : `Completitud: ${completion.toFixed(0)} %. Ya puedes generar el requerimiento, sin importar el estado de la conversación.`;
   const handleDownload = (): void => {
     if (!generatedRequirement) return;
     downloadMarkdown(
